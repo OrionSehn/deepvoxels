@@ -7,6 +7,8 @@ import torchvision
 import numpy as np
 import cv2
 
+import torch.nn.utils.prune as prune
+
 from dataio import *
 from torch.utils.data import DataLoader
 
@@ -303,6 +305,7 @@ def train():
             iter += 1
 
             if iter % 1 == 0:
+                print("Starting Save Model")
                 util.custom_save(model,
                                  os.path.join(log_dir, 'model-epoch_%d_iter_%s.pth' % (epoch, iter)),
                                  discriminator)
@@ -317,6 +320,43 @@ def test():
     dataset = TestDataset(pose_dir=os.path.join(opt.data_root, 'pose'))
 
     util.custom_load(model, opt.checkpoint)
+
+    # param_list = list(model.named_parameters())
+    # weight_params = []
+    # for param in param_list:
+    #     # print(param[0])
+    #     if "weight" in param[0]:
+    #         print(param[0])
+    #         weight_params.append(param)
+            
+
+    
+    # print(list(model.modules())[0])
+    # for module in model.modules():
+    #     print(module)
+    #     prune.random_unstructured(module, name="weight", amount=0.3)
+        
+    #     break
+
+    module = model.integration_net.reset_new_net[1]
+    # print(module)
+    # print(list(module.named_parameters()))
+    # print(module.reset_old_net[1].weight)
+
+    prune.l1_unstructured(module, name="weight", amount=0.3)
+    # print(list(module.children()))
+    # prune.random_unstructured(module, name="weight", amount=0.3)
+
+    # prune.random_unstructured(model, name="occlusion_net", amount=0.5)
+
+    # prune.global_unstructured(weight_params, pruning_method=prune.L1Unstructured, amount=0.5)
+
+
+    return
+
+
+
+
     model.eval()
 
     dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=4)
@@ -335,6 +375,7 @@ def test():
     forward_time = 0.
 
     print('starting testing...')
+
     with torch.no_grad():
         iter = 0
         depth_imgs = []
