@@ -20,6 +20,8 @@ import util
 
 import time
 
+torch.autograd.set_detect_anomaly(True)
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--train_test', type=str, required=True,
@@ -257,10 +259,8 @@ def train():
             loss_d = torch.stack(losses_d, dim=0).mean()
             loss_g = torch.stack(losses_g, dim=0).mean()
 
-            loss_d.backward()
-            optimizerD.step()
-            loss_g.backward()
-            optimizerG.step()
+            loss_d.backward(retain_graph=True)
+            loss_g.backward(retain_graph=True)
 
             print("Iter %07d   Epoch %03d   loss_gen %0.4f   loss_discrim %0.4f" % (iter, epoch, loss_g, loss_d))
 
@@ -295,13 +295,18 @@ def train():
             writer.add_scalar("gen_loss_l1", loss_g_l1, iter)
             writer.add_scalar("gen_loss_g", loss_g_gan, iter)
 
+            optimizerD.step()
+            optimizerG.step()
+            
+
+
             iter += 1
 
-            if iter % 10000 == 0:
+            if iter % 1 == 0:
                 util.custom_save(model,
                                  os.path.join(log_dir, 'model-epoch_%d_iter_%s.pth' % (epoch, iter)),
                                  discriminator)
-
+                return
     util.custom_save(model,
                      os.path.join(log_dir, 'model-epoch_%d_iter_%s.pth' % (epoch, iter)),
                      discriminator)
