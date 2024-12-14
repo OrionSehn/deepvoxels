@@ -309,7 +309,7 @@ def train():
                 util.custom_save(model,
                                  os.path.join(log_dir, 'model-epoch_%d_iter_%s.pth' % (epoch, iter)),
                                  discriminator)
-                return
+                return        
     util.custom_save(model,
                      os.path.join(log_dir, 'model-epoch_%d_iter_%s.pth' % (epoch, iter)),
                      discriminator)
@@ -321,36 +321,194 @@ def test():
 
     util.custom_load(model, opt.checkpoint)
 
-    # param_list = list(model.named_parameters())
-    # weight_params = []
-    # for param in param_list:
-    #     # print(param[0])
-    #     if "weight" in param[0]:
-    #         print(param[0])
-    #         weight_params.append(param)
-            
+    submodules_to_prune = [
+        model.feature_extractor.net[0].downs[0].net[1],
+        model.feature_extractor.net[0].downs[0].net[2],
+        model.feature_extractor.net[0].downs[0].net[5],
+        model.feature_extractor.net[0].downs[0].net[6],
+        model.feature_extractor.net[0].downs[1].net[1],
+        model.feature_extractor.net[0].downs[1].net[2],
+        model.feature_extractor.net[0].downs[1].net[5],
+        model.feature_extractor.net[0].downs[1].net[6],
+        model.feature_extractor.net[0].downs[2].net[1],
+        model.feature_extractor.net[0].downs[2].net[2],
+        model.feature_extractor.net[0].downs[2].net[5],
+        model.feature_extractor.net[0].downs[2].net[6],
+        model.feature_extractor.net[1],
+        model.feature_extractor.net[1].in_layer[0],
+        model.feature_extractor.net[1].in_layer[1],
+        model.feature_extractor.net[1].unet_block.model[0].net[1],
+        model.feature_extractor.net[1].unet_block.model[0].net[2],
+        model.feature_extractor.net[1].unet_block.model[0].net[5],
+        model.feature_extractor.net[1].unet_block.model[0].net[6],
+        model.feature_extractor.net[1].unet_block.model[1].model[0].net[1],
+        model.feature_extractor.net[1].unet_block.model[1].model[0].net[2],
+        model.feature_extractor.net[1].unet_block.model[1].model[0].net[5],
+        model.feature_extractor.net[1].unet_block.model[1].model[0].net[6],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[0].net[1],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[0].net[2],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[0].net[5],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[0].net[6],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[0].net[1],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[0].net[2],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[0].net[5],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[0].net[6],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[1].model[0].net[1],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[1].model[0].net[2],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[1].model[0].net[5],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[1].model[0].net[6],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[1].model[1].model[0].net[1],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[1].model[1].model[0].net[4],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[1].model[1].model[1].net[0],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[1].model[1].model[1].net[2],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[1].model[2].net[0],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[1].model[2].net[1],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[1].model[2].net[3],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[1].model[2].net[4],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[2].net[0],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[2].net[1],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[2].net[3],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[1].model[2].net[4],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[2].net[0],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[2].net[1],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[2].net[3],
+        model.feature_extractor.net[1].unet_block.model[1].model[1].model[2].net[4],
+        model.feature_extractor.net[1].unet_block.model[1].model[2].net[0],
+        model.feature_extractor.net[1].unet_block.model[1].model[2].net[1],
+        model.feature_extractor.net[1].unet_block.model[1].model[2].net[3],
+        model.feature_extractor.net[1].unet_block.model[1].model[2].net[4],
+        model.feature_extractor.net[1].unet_block.model[2].net[0],
+        model.feature_extractor.net[1].unet_block.model[2].net[1],
+        model.feature_extractor.net[1].unet_block.model[2].net[3],
+        model.feature_extractor.net[1].unet_block.model[2].net[4],
+        model.feature_extractor.net[1].out_layer[1],
 
+        model.rendering_net.net[0],
+        model.rendering_net.net[0].in_layer[0],
+        model.rendering_net.net[0].in_layer[1],
+        model.rendering_net.net[0].unet_block.model[0].net[1],
+        model.rendering_net.net[0].unet_block.model[0].net[2],
+        model.rendering_net.net[0].unet_block.model[0].net[6],
+        model.rendering_net.net[0].unet_block.model[0].net[7],
+        model.rendering_net.net[0].unet_block.model[1].model[0].net[1],
+        model.rendering_net.net[0].unet_block.model[1].model[0].net[2],
+        model.rendering_net.net[0].unet_block.model[1].model[0].net[6],
+        model.rendering_net.net[0].unet_block.model[1].model[0].net[7],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[0].net[1],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[0].net[2],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[0].net[6],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[0].net[7],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[0].net[1],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[0].net[2],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[0].net[6],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[0].net[7],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[1].model[0].net[1],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[1].model[0].net[2],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[1].model[0].net[6],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[1].model[0].net[7],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[1].model[1].model[0].net[1],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[1].model[1].model[0].net[5],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[1].model[1].model[1].net[0],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[1].model[1].model[1].net[3],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[1].model[2].net[0],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[1].model[2].net[1],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[1].model[2].net[4],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[1].model[2].net[5],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[2].net[0],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[2].net[1],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[2].net[4],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[1].model[2].net[5],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[2].net[0],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[2].net[1],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[2].net[4],
+        model.rendering_net.net[0].unet_block.model[1].model[1].model[2].net[5],
+        model.rendering_net.net[0].unet_block.model[1].model[2].net[0],
+        model.rendering_net.net[0].unet_block.model[1].model[2].net[1],
+        model.rendering_net.net[0].unet_block.model[1].model[2].net[4],
+        model.rendering_net.net[0].unet_block.model[1].model[2].net[5],
+        model.rendering_net.net[0].unet_block.model[2].net[0],
+        model.rendering_net.net[0].unet_block.model[2].net[1],
+        model.rendering_net.net[0].unet_block.model[2].net[4],
+        model.rendering_net.net[0].unet_block.model[2].net[5],
+        model.rendering_net.net[0].out_layer[1],
+        model.rendering_net.net[1].ups[0].net[0],
+        model.rendering_net.net[1].ups[0].net[1],
+        model.rendering_net.net[1].ups[0].net[4],
+        model.rendering_net.net[1].ups[0].net[5],
+        model.rendering_net.net[1].ups[1].net[0],
+        model.rendering_net.net[1].ups[1].net[1],
+        model.rendering_net.net[1].ups[1].net[4],
+        model.rendering_net.net[1].ups[1].net[5],
+        model.rendering_net.net[1].ups[2].net[0],
+        model.rendering_net.net[1].ups[2].net[1],
+        model.rendering_net.net[1].ups[2].net[4],
+        model.rendering_net.net[1].ups[2].net[5],
+        model.rendering_net.net[2],
+        model.rendering_net.net[3],
+        model.rendering_net.net[5],
     
-    # print(list(model.modules())[0])
-    # for module in model.modules():
-    #     print(module)
-    #     prune.random_unstructured(module, name="weight", amount=0.3)
+        model.occlusion_net.occlusion_prep[0].net[1],
+        model.occlusion_net.occlusion_prep[1],
+        model.occlusion_net.occlusion_net.in_layer[0].net[1],
+        model.occlusion_net.occlusion_net.in_layer[1],
+        model.occlusion_net.occlusion_net.unet_block.model[0].net[1],
+        model.occlusion_net.occlusion_net.unet_block.model[0].net[2],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[0].net[1],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[0].net[2],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[1].model[0].net[1],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[1].model[0].net[2],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[1].model[1].model[0].net[1],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[1].model[1].model[0].net[2],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[1].model[1].model[1].model[0].net[1],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[1].model[1].model[1].model[0].net[2],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[1].model[1].model[1].model[1].model[0].net[1],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[1].model[1].model[1].model[1].model[1].net[0],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[1].model[1].model[1].model[2].net[0],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[1].model[1].model[1].model[2].net[1],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[1].model[1].model[2].net[0],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[1].model[1].model[2].net[1],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[1].model[2].net[0],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[1].model[2].net[1],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[2].net[0],
+        model.occlusion_net.occlusion_net.unet_block.model[1].model[2].net[1],
+        model.occlusion_net.occlusion_net.unet_block.model[2].net[0],
+        model.occlusion_net.occlusion_net.unet_block.model[2].net[1],
+        model.occlusion_net.occlusion_net.out_layer[0].net[1],
+        model.occlusion_net.occlusion_net.out_layer[1],
+        model.occlusion_net.softmax_net[0].net[1],
+        model.integration_net.new_integration[1],
+        model.integration_net.old_integration[1],
+        model.integration_net.update_old_net[1],
+        model.integration_net.update_new_net[1],
+        model.integration_net.reset_old_net[1],
+        model.integration_net.reset_new_net[1],
+        model.inpainting_net.in_layer[0].net[1],
+        model.inpainting_net.in_layer[1],
+        model.inpainting_net.unet_block.model[0].net[1],
+        model.inpainting_net.unet_block.model[0].net[2],
+        model.inpainting_net.unet_block.model[1].model[0].net[1],
+        model.inpainting_net.unet_block.model[1].model[1].net[0],
+        model.inpainting_net.unet_block.model[2].net[0],
+        model.inpainting_net.unet_block.model[2].net[1],
+        model.inpainting_net.out_layer[0].net[1],
+        model.inpainting_net.out_layer[1],
+    ]
+
+    prunable_types = [
+        torch.nn.Conv2d,
+        torch.nn.Conv3d,
+        torch.nn.Linear,
+    ]
+
+    for module in submodules_to_prune:
+        if type(module) in prunable_types:
+            # print("Pruning: ", module)
+            # print("Before: ", module.weight)
+            prune.l1_unstructured(module, name="weight", amount=0.3)
+            # print("Pruned: ", module.weight)
+
+            # break
         
-    #     break
-
-    module = model.integration_net.reset_new_net[1]
-    # print(module)
-    # print(list(module.named_parameters()))
-    # print(module.reset_old_net[1].weight)
-
-    prune.l1_unstructured(module, name="weight", amount=0.3)
-    # print(list(module.children()))
-    # prune.random_unstructured(module, name="weight", amount=0.3)
-
-    # prune.random_unstructured(model, name="occlusion_net", amount=0.5)
-
-    # prune.global_unstructured(weight_params, pruning_method=prune.L1Unstructured, amount=0.5)
-
 
     return
 
