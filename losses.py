@@ -15,13 +15,17 @@ import projection
 class GANLoss(nn.Module):
     def __init__(self, target_real_label=1.0, target_fake_label=0.0):
         super(GANLoss, self).__init__()
-        self.eps = 1e-9
+        self.eps = 1e-6
 
     def __call__(self, input, target_is_real):
         if target_is_real:
             return -1.*torch.mean(torch.log(input + self.eps))
         else:
-            return -1.*torch.mean(torch.log(1 - input + self.eps))
+            to_log = 1 - input + self.eps
+            if torch.isnan(to_log).any():
+                print("to_log has nan")
+                to_log = torch.clamp(to_log, 0, 1)
+            return -1.*torch.mean(torch.log(to_log))
 
 class PatchDiscriminator(nn.Module):
     def __init__(self, input_nc, ndf=28, n_layers=3):
