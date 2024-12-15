@@ -62,6 +62,8 @@ parser.add_argument('--nf0', type=int, default=64,
 parser.add_argument('--near_plane', type=float, default=np.sqrt(3)/2,
                     help='Position of the near plane.')
 
+parser.add_argument('--prune', type=bool, default=False)
+
 opt = parser.parse_args()
 print('\n'.join(["%s: %s" % (key, value) for key, value in vars(opt).items()]))
 
@@ -330,9 +332,8 @@ def test():
 
     # Average forward pass time over 274 examples is 0.054791 - no pruning
     # Average forward pass time over 274 examples is 0.035641 - full pruning
-    prune_model = True
 
-    if prune_model:
+    if opt.prune:
 
         submodules_to_prune = [
             model.feature_extractor.net[0].downs[0].net[1],
